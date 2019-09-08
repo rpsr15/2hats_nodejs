@@ -84,7 +84,7 @@ function authorize(credentials) {
 
 // get list of events for  a day
 function getEvents(auth, timeMin, timeMax) {
-
+  return new Promise(function(resolve, reject){
     const calendar = google.calendar({ version: "v3", auth });
     calendar.events.list(
       {
@@ -107,7 +107,6 @@ function getEvents(auth, timeMin, timeMax) {
 
           events.map((event, i) => {
             var startTime = event.start.dateTime || event.start.date;
-            console.log(startTime);
             const startDateTime = new Date(startTime);
             startDateTime.setTimezone("UTC");
             const endDateTime = new Date(event.end.dateTime);
@@ -128,17 +127,18 @@ function getEvents(auth, timeMin, timeMax) {
             }
           });
           //findslots
-          return findSlots(startTimes, endTimes);
+          resolve(findSlots(startTimes, endTimes));
         } else {
           //No Booked windows so time window 9 to 5 is available
           const result = {
             timeslots: [{ startTime: "09:00", endTime: "17:00" }]
           };
-          return result;
+          resolve(result);
         }
       }
     );
 
+  });
 }
 // book appointment to the calendar with given start and end dateTime
 function bookEvent(auth, startDateTime, endDateTime) {
@@ -195,7 +195,6 @@ function getEventsForDay(auth, timeMin, timeMax) {
 
           events.map((event, i) => {
             var startTime = event.start.dateTime || event.start.date;
-            console.log(startTime);
             const startDateTime = new Date(startTime);
             startDateTime.setTimezone("UTC");
             const endDateTime = new Date(event.end.dateTime);
@@ -228,12 +227,8 @@ function getEventsForDay(auth, timeMin, timeMax) {
     );
   }); //end of promise
 }
-Date.prototype.addHours = function(h) {
-  this.setTime(this.getTime() + (h*60*60*1000));
-  return this;
-}
-function getDays(currentDate, startDate, endDate){
-  return new Promise(function(resolve, reject){
+
+async function getDays(currentDate, startDate, endDate){
     var days = [];
     while (startDate < endDate) {
      // console.log("startdate", startDate.getDate());
@@ -251,19 +246,24 @@ function getDays(currentDate, startDate, endDate){
         const year = startDate.getFullYear();
         const start = new time.Date(year, month, date, 9,0,0,0,"UTC");
         const end = new time.Date(year, month, date, 17,0,0,0,"UTC");
-        const r = getEvents(oAuth2Client, start, end);
-        console.log("here"+r);
+        const r = await getEvents(oAuth2Client, start.toISOString(), end.toISOString());
+        
+        //no of available slots
+        const count = r.timeslots.length;  
+        var hasTimeSlots = true;
+        if(count === 0){
+          hasTimeSlots = false;
+        }
         days.push({
           "day": startDate.getDate(),
-          "hasTimeSlots":true
+          "hasTimeSlots":hasTimeSlots
         })
       }
   
       startDate.setDate(startDate.getDate() + 1);
       
     }
-    resolve(days);
-  });
+    return days;
 }
 
 app.get("/", (req, res) => {
