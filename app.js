@@ -6,7 +6,8 @@ const app = express();
 const fs = require("fs");
 const { google } = require("googleapis");
 const readline = require("readline");
-const SCOPES = ["https://www.googleapis.com/auth/calendar.readonly",];
+const SCOPES = ["https://www.googleapis.com/auth/calendar.events",
+                "https://www.googleapis.com/auth/calendar.readonly",];
 // Locale configuration
 var localeOptions = { timeZone: "UTC", timeZoneName: "short" };
 const {
@@ -21,7 +22,6 @@ const TOKEN_PATH = "token.json";
 var oAuth2Client;
 // Load client secrets from a local file.
 fs.readFile("credentials.json", (err, content) => {
-  console.log("authorizing");
   if (err) return console.log("Error loading client secret file:", err);
   // Authorize a client with credentials, then call the Google Calendar API.
   authorize(JSON.parse(content));
@@ -53,26 +53,27 @@ function authorize(credentials) {
  * execute the given callback with the authorized OAuth2 client.
  * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
  * @param {getEventsCallback} callback The callback for the authorized client.
- */
-function getAccessToken(oAuth2Client) {
+ */function getAccessToken(oAuth2Client, callback) {
   const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: "offline",
-    scope: SCOPES
+    access_type: 'offline',
+    scope: SCOPES,
   });
+  console.log('Authorize this app by visiting this url:', authUrl);
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
-  rl.question("Enter the code from that page here: ", code => {
+  rl.question('Enter the code from that page here: ', (code) => {
     rl.close();
     oAuth2Client.getToken(code, (err, token) => {
-      if (err) return console.error("Error retrieving access token", err);
+      if (err) return console.error('Error retrieving access token', err);
       oAuth2Client.setCredentials(token);
       // Store the token to disk for later program executions
-      fs.writeFile(TOKEN_PATH, JSON.stringify(token), err => {
+      fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
         if (err) return console.error(err);
-        console.log("Token stored to", TOKEN_PATH);
+        console.log('Token stored to', TOKEN_PATH);
       });
+      callback(oAuth2Client);
     });
   });
 }
