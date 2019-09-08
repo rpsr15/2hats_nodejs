@@ -6,10 +6,7 @@ NodeJS Assessment
 3. Appointments can only be booked during weekdays from 9 am to 5 pm
 4. Bookings can only be made at least 24 hours in advance
 5. Appointments cannot be booked in the past
-#Assumptions
-1.
-2.
-3.
+
 
 ### Installing
 
