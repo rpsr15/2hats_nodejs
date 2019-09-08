@@ -224,6 +224,7 @@ app.post(
     const minutes = req.query.minute;
     const bookTime = new Date(year, month - 1, day, hour, minutes);
     const currentDateTime = new Date();
+    var booked = false;
     if (bookTime - currentDateTime < 0) {
       // cannot book in past
       res.status(502).send({
@@ -265,20 +266,29 @@ app.post(
             const endTime =  new Date(bookTime.getTime() + 40*60000);
              console.log(bookTime.toISOString());
              console.log(endTime.toISOString());
+             booked = true;
              bookEvent(oAuth2Client, bookTime, endTime).then(
                function(result){
-                 console.log(result);
+                 
+                 res.status(200).send({
+                  success: true,
+                  "startTime":bookTime.toISOString(),
+                  "endTime":endTime.toISOString()
+                });
+                return;
+                
                }
              ).catch( (error)=>{
                console.log("cannot book appointment", error);
              });
           }
         });
-
+        if (booked === false) {
         res.status(502).send({
           success: false,
           message: "Invalid time slot"
         });
+      }
       });
     }
   }
